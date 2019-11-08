@@ -1,0 +1,19 @@
+
+************** QualityAssessor(free only) Summary **************
+
+  Evaluating quality for 9 free elements of 10 total elements.
+  This mesh had 10 hexahedron elements.
+  THERE ARE 2 INVERTED ELEMENTS. 
+  (Elements invalid at 2 of 72 sample locations.)
+
+  2 OF 9 ENTITIES EVALUATED TO AN UNDEFINED VALUE FOR Inverse Mean Ratio
+
+     Element Quality Statistics
+
+     minimum     average         rms     maximum    std.dev.
+           0     7.35381     10.6046     25.4597     7.64068
+
+     Number of statistics = 9
+     Metric = Inverse Mean Ratio
+     Element Quality not based on sample points.
+
