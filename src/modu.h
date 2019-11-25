@@ -31,7 +31,7 @@ public:
 
     void SaveCache();
     void LoadCache();
-    bool TryUntangle();
+    bool TryUntangle(float);
 
 private:
     map<uint8_t, uint8_t> vtkmapping;
@@ -40,11 +40,11 @@ private:
     void AddType2();
     void AddType3();
 
-    void UntangleType1(set<set<uint8_t> >);
-    void UntangleType2(set<set<uint8_t> >);
-    void UntangleType3(set<set<uint8_t> >);
-    void Custom_push(vector<uint8_t>, vector<uint8_t>, set<uint8_t>);
-    Coord movepos(Algvec, Coord, Coord);
+    void UntangleType1(set<set<uint8_t> >, float);
+    void UntangleType2(set<set<uint8_t> >, float);
+    void UntangleType3(set<set<uint8_t> >, float);
+    void Custom_push(vector<uint8_t>, vector<uint8_t>, set<uint8_t>, float);
+    Coord movepos(Algvec, Coord, Coord, float);
     /* bool AddVirtualType1(set<set<uint8_t> > nfs); */
     /* bool AddVirtualType2(); */
     /* bool AddVirtualType3(); */

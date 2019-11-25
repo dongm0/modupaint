@@ -5,17 +5,7 @@ QualityImprover::QualityImprover(uint8_t c){
     return;
 }
 QualityImprover::~QualityImprover(){}
-uint8_t QualityImprover::exec_output() {
-    streambuf *backup;
-    ofstream fout;
-    fout.open("tmp.dat");
-    backup = cout.rdbuf();
-    uint8_t res = exec();
-    cout.rdbuf(backup);
-    fout.close();
-    return res;
-}
-uint8_t QualityImprover::exec() {
+uint8_t QualityImprover::ExecWrapper() {
     string filename = "./vtk/" + to_string(cellnum);
     filename += "_tmp.vtk";
     Mesquite::MsqError err;
@@ -23,14 +13,40 @@ uint8_t QualityImprover::exec() {
     mymesh.read_vtk(filename.c_str(), err);
     if (err) return 0;
 
+    exec(mymesh, err);
+
+    if (isTangled(mymesh, err))
+        return 1;
+
+    string outfilename = "./vtk/" + to_string(cellnum);
+    outfilename += "_tmp_opt.vtk";
+    mymesh.write_vtk(outfilename.c_str(), err);
+    if (err) return 0;
+
+    return 2;
+}
+uint8_t QualityImprover::isTangledWrapper() {
+    string filename = "./vtk/" + to_string(cellnum);
+    filename += "_tmp.vtk";
+    Mesquite::MsqError err;
+    Mesquite::MeshImpl mymesh;
+    mymesh.read_vtk(filename.c_str(), err);
+    if (err) return 0;
+
+    return isTangled(mymesh, err);
+}
+uint8_t QualityImprover::exec(Mesquite::MeshImpl mymesh, Mesquite::MsqError err) {
+
     Mesquite::ShapeImprovementWrapper wrapper;
     Mesquite::UntangleWrapper untangle;
+
     untangle.run_instructions(&mymesh, err);
-    if (err) return 0;
 
     wrapper.run_instructions(&mymesh, err);
-    if (err) return 0;
 
+    return 1;
+}
+uint8_t QualityImprover::isTangled(Mesquite::MeshImpl mymesh, Mesquite::MsqError err) {
     Mesquite::QualityAssessor qa(false, false);
     Mesquite::InstructionQueue q;
     q.add_quality_assessor(&qa, err);
@@ -39,13 +55,11 @@ uint8_t QualityImprover::exec() {
     int inverted_elems = 0, inverted_samples = 0;
     qa.get_inverted_element_count(inverted_elems, inverted_samples, err);
     if (inverted_elems or inverted_samples) return 1;
+    if (err) return 1;
 
-    string outfilename = "./vtk/" + to_string(cellnum);
-    outfilename += "_tmp_opt.vtk";
-    mymesh.write_vtk(outfilename.c_str(), err);
-    if (err) return 0;
-    return 2;
+    return 0;
 }
+
 
 bool Untangle(int cellnum) {
     string filename = "./vtk/" + to_string(cellnum);

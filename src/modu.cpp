@@ -172,22 +172,21 @@ void Modu::AddType3() {
         if (coords.find(x) == coords.end())
             newpoint = x;
     }
-    vector<uint8_t> p(6);
+    vector<uint8_t> p(4);
     for (int i=0; i<4; ++i) {
         if (topo[c*8+4+i] == newpoint) {
-            p[0] = topo[c*8+4+(i+3)%4];
-            p[1] = topo[c*8+(i+3)%4];
-            p[2] = topo[c*8+i];
-            p[3] = topo[c*8+(i+1)%4];
-            p[4] = topo[c*8+4+(i+1)%4];
-            p[5] = topo[c*8+4+(i+2)%4];
+            p[0] = topo[c*8+(i+1)%4];
+            p[1] = topo[c*8+(i+2)%4+4];
+            p[2] = topo[c*8+(i+3)%4];
+            p[3] = topo[c*8+(i+2)%4];
             break;
         }
     }
     Coord coo[3];
     for (int i=0; i<3; ++i) {
-        auto v = Algvec(coords[p[i*2+1]], coords[p[i*2]]) + 
-                 Algvec(coords[p[i*2+1]], coords[p[i*2+2]]);
+        auto v = crossProduct(Algvec(coords[p[3]], coords[p[i]]),  
+                 Algvec(coords[p[3]], coords[p[i+1]]));
+        v.Unit();
         coo[i] = v.getToPoint(coords[p[i*2+1]]);
     }
     Coord nc{0, 0, 0};
@@ -219,7 +218,7 @@ void Modu::LoadCache() {
     vtkmapping = cache.vtkmapping;
 }
 
-bool Modu::TryUntangle() {
+bool Modu::TryUntangle(float para) {
     //判断类型
     set<set<uint8_t> > fs;
     for (auto i=0; i<chosenC; ++i) {
@@ -256,12 +255,13 @@ bool Modu::TryUntangle() {
             nfs.insert(f);
         }
     }
-    if (oldfnum == 3) UntangleType1(nfs);
-    else if (oldfnum == 4) UntangleType2(nfs);
-    else if (oldfnum == 5) UntangleType3(nfs);
+    if (oldfnum == 3) UntangleType1(nfs, para);
+    else if (oldfnum == 4) UntangleType2(nfs, para);
+    else if (oldfnum == 5) UntangleType3(nfs, para);
+    return true;
 }
 
-void Modu::UntangleType1(set<set<uint8_t> > nfs) {
+void Modu::UntangleType1(set<set<uint8_t> > nfs, float para) {
     set<uint8_t> bottomface;
     set<uint8_t> others;
     
@@ -287,40 +287,55 @@ void Modu::UntangleType1(set<set<uint8_t> > nfs) {
         b1 = vector<uint8_t>{tmp[0], tmp[1], tmp[2]};
         b2 = vector<uint8_t>{tmp[2], tmp[3], tmp[0]};
     }
-    else if (bottompos == set<uint8_t>{0, 1, 2, 3}) {
-        b1 = vector<uint8_t>{tmp[0], tmp[1], tmp[2]};
-        b2 = vector<uint8_t>{tmp[2], tmp[3], tmp[0]};
+    else if (bottompos == set<uint8_t>{0, 1, 4, 5}) {
+        b1 = vector<uint8_t>{tmp[0], tmp[1], tmp[5]};
+        b2 = vector<uint8_t>{tmp[5], tmp[4], tmp[0]};
     }
-    else if (bottompos == set<uint8_t>{0, 1, 2, 3}) {
-        b1 = vector<uint8_t>{tmp[0], tmp[1], tmp[2]};
-        b2 = vector<uint8_t>{tmp[2], tmp[3], tmp[0]};
+    else if (bottompos == set<uint8_t>{1, 2, 5, 6}) {
+        b1 = vector<uint8_t>{tmp[1], tmp[2], tmp[6]};
+        b2 = vector<uint8_t>{tmp[6], tmp[5], tmp[1]};
     }
-    else if (bottompos == set<uint8_t>{0, 1, 2, 3}) {
-        b1 = vector<uint8_t>{tmp[0], tmp[1], tmp[2]};
-        b2 = vector<uint8_t>{tmp[2], tmp[3], tmp[0]};
+    else if (bottompos == set<uint8_t>{2, 3, 6, 7}) {
+        b1 = vector<uint8_t>{tmp[2], tmp[3], tmp[7]};
+        b2 = vector<uint8_t>{tmp[7], tmp[6], tmp[2]};
     }
-    else if (bottompos == set<uint8_t>{0, 1, 2, 3}) {
-        b1 = vector<uint8_t>{tmp[0], tmp[1], tmp[2]};
-        b2 = vector<uint8_t>{tmp[2], tmp[3], tmp[0]};
+    else if (bottompos == set<uint8_t>{0, 3, 4, 7}) {
+        b1 = vector<uint8_t>{tmp[0], tmp[3], tmp[7]};
+        b2 = vector<uint8_t>{tmp[7], tmp[4], tmp[0]};
     }
-    else if (bottompos == set<uint8_t>{0, 1, 2, 3}) {
-        b1 = vector<uint8_t>{tmp[0], tmp[1], tmp[2]};
-        b2 = vector<uint8_t>{tmp[2], tmp[3], tmp[0]};
+    else if (bottompos == set<uint8_t>{4, 5, 6 ,7}) {
+        b1 = vector<uint8_t>{tmp[4], tmp[5], tmp[6]};
+        b2 = vector<uint8_t>{tmp[6], tmp[7], tmp[4]};
     }
-    Custom_push(b1, b2, others);
+    Custom_push(b1, b2, others, para);
 }
-void Modu::UntangleType2(set<set<uint8_t> > nfs) {
+void Modu::UntangleType2(set<set<uint8_t> > nfs, float para) {
     set<uint8_t> bottomface;
     set<uint8_t> others;
-    
+    map<uint8_t, int> allpoints;
     for (auto f : nfs) {
         for (auto x : f) {
-            if (others.find(x) != others.end()) {
-                others.erase(others.find(x));
-                bottomface.insert(x);
-            }
+            if (allpoints.find(x) == allpoints.end())
+                allpoints.insert(make_pair(x, 1));
             else
-                others.insert(x);
+                allpoints[x]++;
+        }
+    }
+    int qq = 1;
+    for (auto f : nfs) {
+        for (auto x : f) {
+            if (allpoints[x] == 1) {
+                qq = 0;
+                continue;
+            }
+        }
+        if (qq == 1) {
+            bottomface = f;
+            for (auto x : allpoints) {
+                if (f.find(x.first) == f.end())
+                    others.insert(x.first);
+            }
+            break;
         }
     }
     vector<uint8_t> tmp;
@@ -331,49 +346,115 @@ void Modu::UntangleType2(set<set<uint8_t> > nfs) {
             bottompos.insert(i);
     }
     vector<uint8_t> b1, b2;
-    if (bottompos == set<uint8_t>{0, 1, 2, 3}) {
+     if (bottompos == set<uint8_t>{0, 1, 2, 3}) {
         b1 = vector<uint8_t>{tmp[0], tmp[1], tmp[2]};
         b2 = vector<uint8_t>{tmp[2], tmp[3], tmp[0]};
     }
-    else if (bottompos == set<uint8_t>{0, 1, 2, 3}) {
-        b1 = vector<uint8_t>{tmp[0], tmp[1], tmp[2]};
-        b2 = vector<uint8_t>{tmp[2], tmp[3], tmp[0]};
+    else if (bottompos == set<uint8_t>{0, 1, 4, 5}) {
+        b1 = vector<uint8_t>{tmp[0], tmp[1], tmp[5]};
+        b2 = vector<uint8_t>{tmp[5], tmp[4], tmp[0]};
     }
-    else if (bottompos == set<uint8_t>{0, 1, 2, 3}) {
-        b1 = vector<uint8_t>{tmp[0], tmp[1], tmp[2]};
-        b2 = vector<uint8_t>{tmp[2], tmp[3], tmp[0]};
+    else if (bottompos == set<uint8_t>{1, 2, 5, 6}) {
+        b1 = vector<uint8_t>{tmp[1], tmp[2], tmp[6]};
+        b2 = vector<uint8_t>{tmp[6], tmp[5], tmp[1]};
     }
-    else if (bottompos == set<uint8_t>{0, 1, 2, 3}) {
-        b1 = vector<uint8_t>{tmp[0], tmp[1], tmp[2]};
-        b2 = vector<uint8_t>{tmp[2], tmp[3], tmp[0]};
+    else if (bottompos == set<uint8_t>{2, 3, 6, 7}) {
+        b1 = vector<uint8_t>{tmp[2], tmp[3], tmp[7]};
+        b2 = vector<uint8_t>{tmp[7], tmp[6], tmp[2]};
     }
-    else if (bottompos == set<uint8_t>{0, 1, 2, 3}) {
-        b1 = vector<uint8_t>{tmp[0], tmp[1], tmp[2]};
-        b2 = vector<uint8_t>{tmp[2], tmp[3], tmp[0]};
+    else if (bottompos == set<uint8_t>{0, 3, 4, 7}) {
+        b1 = vector<uint8_t>{tmp[0], tmp[3], tmp[7]};
+        b2 = vector<uint8_t>{tmp[7], tmp[4], tmp[0]};
     }
-    else if (bottompos == set<uint8_t>{0, 1, 2, 3}) {
-        b1 = vector<uint8_t>{tmp[0], tmp[1], tmp[2]};
-        b2 = vector<uint8_t>{tmp[2], tmp[3], tmp[0]};
+    else if (bottompos == set<uint8_t>{4, 5, 6 ,7}) {
+        b1 = vector<uint8_t>{tmp[4], tmp[5], tmp[6]};
+        b2 = vector<uint8_t>{tmp[6], tmp[7], tmp[4]};
     }
-    Custom_push(b1, b2, others);
+    Custom_push(b1, b2, others, para);
 
 }
-void Modu::Custom_push(vector<uint8_t> b1, vector<uint8_t> b2, set<uint8_t> others) {
+
+void Modu::UntangleType3(set<set<uint8_t> > nfs, float para) {
+    set<uint8_t> bottomface;
+    set<uint8_t> others;
+    map<uint8_t, int> allpoints;
+    for (auto f : nfs) {
+        for (auto x : f) {
+            if (allpoints.find(x) == allpoints.end())
+                allpoints.insert(make_pair(x, 1));
+            else
+                allpoints[x]++;
+        }
+    }
+    int qq = 1;
+    for (auto f : nfs) {
+        for (auto x : f) {
+            if (allpoints[x] == 2) {
+                qq = 0;
+                continue;
+            }
+        }
+        if (qq == 1) {
+            bottomface = f;
+            for (auto x : allpoints) {
+                if (f.find(x.first) == f.end())
+                    others.insert(x.first);
+            }
+            break;
+        }
+    }
+    vector<uint8_t> tmp;
+    tmp.insert(tmp.end(), topo.begin()+chosenC*8, topo.begin()+chosenC*8+8);
+    set<uint8_t> bottompos;
+    for (int i=0; i<8; ++i) {
+        if (bottomface.find(tmp[i]) != bottomface.end())
+            bottompos.insert(i);
+    }
+    vector<uint8_t> b1, b2;
+     if (bottompos == set<uint8_t>{0, 1, 2, 3}) {
+        b1 = vector<uint8_t>{tmp[0], tmp[1], tmp[2]};
+        b2 = vector<uint8_t>{tmp[2], tmp[3], tmp[0]};
+    }
+    else if (bottompos == set<uint8_t>{0, 1, 4, 5}) {
+        b1 = vector<uint8_t>{tmp[0], tmp[1], tmp[5]};
+        b2 = vector<uint8_t>{tmp[5], tmp[4], tmp[0]};
+    }
+    else if (bottompos == set<uint8_t>{1, 2, 5, 6}) {
+        b1 = vector<uint8_t>{tmp[1], tmp[2], tmp[6]};
+        b2 = vector<uint8_t>{tmp[6], tmp[5], tmp[1]};
+    }
+    else if (bottompos == set<uint8_t>{2, 3, 6, 7}) {
+        b1 = vector<uint8_t>{tmp[2], tmp[3], tmp[7]};
+        b2 = vector<uint8_t>{tmp[7], tmp[6], tmp[2]};
+    }
+    else if (bottompos == set<uint8_t>{0, 3, 4, 7}) {
+        b1 = vector<uint8_t>{tmp[0], tmp[3], tmp[7]};
+        b2 = vector<uint8_t>{tmp[7], tmp[4], tmp[0]};
+    }
+    else if (bottompos == set<uint8_t>{4, 5, 6 ,7}) {
+        b1 = vector<uint8_t>{tmp[4], tmp[5], tmp[6]};
+        b2 = vector<uint8_t>{tmp[6], tmp[7], tmp[4]};
+    }
+    Custom_push(b1, b2, others, para);
+
+}
+
+void Modu::Custom_push(vector<uint8_t> b1, vector<uint8_t> b2, set<uint8_t> others, float para) {
     Algvec n1 = crossProduct(Algvec(coords[b1[0]], coords[b1[1]]), Algvec(coords[b1[1]], coords[b1[2]]));
     Algvec n2 = crossProduct(Algvec(coords[b2[0]], coords[b2[1]]), Algvec(coords[b2[1]], coords[b2[2]]));
     n1.Unit();
     n2.Unit();
     auto n = n1 + n2;
-    for (auto p : others) coords[p] = movepos(n, coords[b1[1]], coords[p]);
+    for (auto p : others) coords[p] = movepos(n, coords[b1[1]], coords[p], para);
 }
 
-Coord Modu::movepos(Algvec n, Coord b, Coord p) {
+Coord Modu::movepos(Algvec n, Coord b, Coord p, float para) {
     double l;
     double x0, y0, z0, x1, y1, z1, i, j, k;
     x0=b.x, y0=b.y, z0=b.z, x1=p.x, y1=p.y, z1=p.z, i=n.dx, j=n.dy, k=n.dz;
     l = i*x0+j*y0+k*z0-i*x1-j*y1-j*z1;
     l = l/(i*i+j*j+k*k);
-    Coord res{x1+l*i, y1+l*j, z1+l*k};
+    Coord res{x1+l*i*para, y1+l*j*para, z1+l*k*para};
     return res;
 }
 /* bool Modu::AddVirtualType1(set<set<uint8_t> > nfs) { */
