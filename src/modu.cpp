@@ -61,7 +61,39 @@ void Modu::VtkOut() {
     fout << "POINT_DATA " << (int)chosenV.size() << endl;
     fout << "SCALARS fixed int\nLOOKUP_TABLE default\n";
     for (int i=0; i<chosenV.size(); ++i) {
-        if (i <= 7) fout << "1\n";
+        if (i <= 2) fout << "1\n";
+        else fout << "0\n";
+    }
+    fout.close();
+}
+
+void Modu::VtkOut(set<uint8_t> fixed) {
+    ofstream fout;
+    string filename = "./vtk/" + to_string(chosenC);
+    filename += "_tmp.vtk";
+    fout.open(filename);
+    fout << "# vtk DataFile Version 3.0\n";
+    fout << "Modu Geometry\n";
+    fout << "ASCII\n";
+    fout << "DATASET UNSTRUCTURED_GRID\n";
+    fout << "POINTS " << chosenV.size() << " double\n";
+    for (auto x : chosenV)
+        fout << coords[x].x << " " << coords[x].y << " " << coords[x].z << endl;
+    fout << "CELLS " << (int)chosenC << " " << (int)chosenC*9 << endl;
+    for (int i=0; i<chosenC; ++i) {
+        fout << "8 ";
+        for (int j=0; j<8; ++j)
+            fout << (int)topo[i*8+j] << " ";
+        fout << endl;
+    }
+    fout << "CELL_TYPES " << (int)chosenC << endl;
+    for (int i=0; i<chosenC; ++i)
+        fout << "12" << endl;
+    fout << "POINT_DATA " << (int)chosenV.size() << endl;
+    fout << "SCALARS fixed int\nLOOKUP_TABLE default\n";
+    for (int i=0; i<chosenV.size(); ++i) {
+        if (i <= 2) fout << "1\n";
+        else if (fixed.find(i) != fixed.end()) fout << "1\n";
         else fout << "0\n";
     }
     fout.close();
@@ -97,10 +129,24 @@ void Modu::AddNewcell() {
         }
     }
     chosenC += 1;
-    if (newv == 8) AddType0();
-    else if (newv == 4) AddType1();
-    else if (newv == 2) AddType2();
-    else if (newv == 1) AddType3();
+    if (newv == 8) {
+        AddType0();
+        newcelltype = 0;
+    }
+    else if (newv == 4) {
+        AddType1();
+        newcelltype = 1;
+    }
+    else if (newv == 2) {
+        AddType2();
+        newcelltype = 2;
+    }
+    else if (newv == 1) {
+        AddType3();
+        newcelltype = 3;
+    }
+    else
+        newcelltype = 4;
 }
 
 void Modu::AddType0() {
@@ -185,9 +231,9 @@ void Modu::AddType3() {
     Coord coo[3];
     for (int i=0; i<3; ++i) {
         auto v = crossProduct(Algvec(coords[p[3]], coords[p[i]]),  
-                 Algvec(coords[p[3]], coords[p[i+1]]));
+                 Algvec(coords[p[3]], coords[p[(i+1)%3]]));
         v.Unit();
-        coo[i] = v.getToPoint(coords[p[i*2+1]]);
+        coo[i] = v.getToPoint(coords[p[3]]);
     }
     Coord nc{0, 0, 0};
     for (int i=0; i<3; ++i) {
@@ -255,6 +301,10 @@ bool Modu::TryUntangle(float para) {
             nfs.insert(f);
         }
     }
+    newcellpoints.clear();
+    for (auto f : nfs)
+        for (auto x : f)
+            newcellpoints.insert(x);
     if (oldfnum == 3) UntangleType1(nfs, para);
     else if (oldfnum == 4) UntangleType2(nfs, para);
     else if (oldfnum == 5) UntangleType3(nfs, para);
@@ -321,12 +371,12 @@ void Modu::UntangleType2(set<set<uint8_t> > nfs, float para) {
                 allpoints[x]++;
         }
     }
-    int qq = 1;
     for (auto f : nfs) {
+        int qq = 1;
         for (auto x : f) {
             if (allpoints[x] == 1) {
                 qq = 0;
-                continue;
+                break;
             }
         }
         if (qq == 1) {

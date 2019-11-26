@@ -35,7 +35,7 @@ uint8_t QualityImprover::isTangledWrapper() {
 
     return isTangled(mymesh, err);
 }
-uint8_t QualityImprover::exec(Mesquite::MeshImpl mymesh, Mesquite::MsqError err) {
+uint8_t QualityImprover::exec(Mesquite::MeshImpl &mymesh, Mesquite::MsqError &err) {
 
     Mesquite::ShapeImprovementWrapper wrapper;
     Mesquite::UntangleWrapper untangle;
@@ -46,12 +46,12 @@ uint8_t QualityImprover::exec(Mesquite::MeshImpl mymesh, Mesquite::MsqError err)
 
     return 1;
 }
-uint8_t QualityImprover::isTangled(Mesquite::MeshImpl mymesh, Mesquite::MsqError err) {
+uint8_t QualityImprover::isTangled(Mesquite::MeshImpl &mymesh, Mesquite::MsqError &err) {
     Mesquite::QualityAssessor qa(false, false);
     Mesquite::InstructionQueue q;
     q.add_quality_assessor(&qa, err);
     Mesquite::MeshDomainAssoc mesh_and_domain = Mesquite::MeshDomainAssoc(&mymesh, 0);
-    q.run_common(&mesh_and_domain, 0, 0, err);
+    q.run_common(&mesh_and_domain, 0, &q, err);
     int inverted_elems = 0, inverted_samples = 0;
     qa.get_inverted_element_count(inverted_elems, inverted_samples, err);
     if (inverted_elems or inverted_samples) return 1;

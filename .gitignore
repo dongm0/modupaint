@@ -1,0 +1,16 @@
+#c++
+./src/*.o
+
+#exec
+./src/paint
+
+#vtk
+./src/vtk/
+
+#root
+./bin/
+./meshfile/
+./vtksample/
+./*.txt
+./*.vtk
+./*.zip

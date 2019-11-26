@@ -12,8 +12,8 @@ public:
     uint8_t isTangledWrapper();
 
 private:
-    uint8_t exec(Mesquite::MeshImpl, Mesquite::MsqError);
-    uint8_t isTangled(Mesquite::MeshImpl, Mesquite::MsqError);
+    uint8_t exec(Mesquite::MeshImpl&, Mesquite::MsqError&);
+    uint8_t isTangled(Mesquite::MeshImpl&, Mesquite::MsqError&);
 };
 
 bool Untangle(int cellnum);

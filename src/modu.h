@@ -19,6 +19,8 @@ public:
     vector<uint8_t> topo;
     map<uint8_t, Coord> coords;
     set<uint8_t> chosenV;
+    int newcelltype;
+    set<uint8_t> newcellpoints;
 
     moducache cache;
 
@@ -27,6 +29,7 @@ public:
     void ReadTopo(string filename);
     void AddNewcell();
     void VtkOut();
+    void VtkOut(set<uint8_t>);
     void VtkIn();
 
     void SaveCache();
