@@ -2,9 +2,11 @@ meshfile/
 vtksample/
 bin/
 src/vtk/
-src/result
+src/result/
 src/TMP/
 src/*.vtk
 src/*.o
 src/paint
 src/*.txt
+src/*.dat
+src/*.jpg
