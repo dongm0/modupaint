@@ -202,7 +202,7 @@ void Modu::AddType2() {
                  Algvec(coords[p3], coords[p2]);
         auto vp = crossProduct(Algvec(coords[p3], coords[p2]), Algvec(coords[p3], coords[p1]));
         if (v.euLength() < 1e-2)
-            v = crossProduct(vn, Algvec(coords[p3], coords[p2]));
+            v = crossProduct(vn, Algvec(coords[p3], coords[p2]))+Algvec(coords[p3], coords[p2]);
         v.Unit();
         v = v*sqrt(2);
         if (dotProduct(vp, vn) < 0)
@@ -271,7 +271,7 @@ bool Modu::TryUntangle(float para) {
         set<uint8_t> faces[6];
         for (int j=0; j<4; ++j) {
             faces[0].insert(topo[i*8+j]);
-            faces[6].insert(topo[i*8+j+4]);
+            faces[5].insert(topo[i*8+j+4]);
         }
         for (int j=0; j<4; ++j) {
             faces[j+1].insert(topo[i*8+j]);
@@ -285,7 +285,7 @@ bool Modu::TryUntangle(float para) {
     set<uint8_t> newc_faces[6];
     for (int j=0; j<4; ++j) {
         newc_faces[0].insert(topo[chosenC*8+j]);
-        newc_faces[6].insert(topo[chosenC*8+j+4]);
+        newc_faces[5].insert(topo[chosenC*8+j+4]);
     }
     for (int j=0; j<4; ++j) {
         newc_faces[j+1].insert(topo[chosenC*8+j]);
@@ -305,9 +305,26 @@ bool Modu::TryUntangle(float para) {
     for (auto f : nfs)
         for (auto x : f)
             newcellpoints.insert(x);
-    if (oldfnum == 3) UntangleType1(nfs, para);
+    if (oldfnum == 3) {
+        map<uint8_t, uint8_t> valence;
+        for (auto f : nfs)
+            for (auto x : f) {
+                if (valence.find(x) == valence.end())
+                    valence.insert(make_pair(x, 0));
+                valence[x] += 1;
+            }
+        int type = 1;
+        for (auto x : valence)
+            if (x.second == 3)
+                type = 5;
+        if (type == 1)
+            UntangleType1(nfs, para);
+        else
+            UntangleType5(nfs, para);
+    }
     else if (oldfnum == 4) UntangleType2(nfs, para);
     else if (oldfnum == 5) UntangleType3(nfs, para);
+    else if (oldfnum == 2) UntangleType4(nfs, para);
     return true;
 }
 
@@ -489,6 +506,92 @@ void Modu::UntangleType3(set<set<uint8_t> > nfs, float para) {
 
 }
 
+void Modu::UntangleType4(set<set<uint8_t> > nfs, float para) {
+    set<uint8_t> facepos[2];
+    Algvec n[2];
+    vector<uint8_t> newc(topo.begin()+chosenC*8, topo.begin()+chosenC*8+8);
+    int i=0;
+    for (auto it=nfs.begin(); i<2; ++i, ++it) {
+        auto face = *it;
+        for (auto x : face) {
+            for (int j=0; j<8; ++j) {
+                if (x == newc[j])
+                    facepos[i].insert(j);
+            }
+        }
+        Coord p1, p2, p3, p4;
+        if (facepos[i] == set<uint8_t>{0, 1, 2, 3})
+            p1 = coords[newc[0]], p2 = coords[newc[3]], p3 = coords[newc[2]], p4 = coords[newc[1]];
+        else if (facepos[i] == set<uint8_t>{0, 1, 4, 5})
+            p1 = coords[newc[0]], p2 = coords[newc[1]], p3 = coords[newc[5]], p4 = coords[newc[4]];
+        else if (facepos[i] == set<uint8_t>{1, 2, 5, 6})
+            p1 = coords[newc[1]], p2 = coords[newc[2]], p3 = coords[newc[6]], p4 = coords[newc[5]];
+        else if (facepos[i] == set<uint8_t>{2, 3, 6, 7})
+            p1 = coords[newc[2]], p2 = coords[newc[3]], p3 = coords[newc[7]], p4 = coords[newc[6]];
+        else if (facepos[i] == set<uint8_t>{0, 3, 4, 7})
+            p1 = coords[newc[3]], p2 = coords[newc[0]], p3 = coords[newc[4]], p4 = coords[newc[7]];
+        else if (facepos[i] == set<uint8_t>{4, 5, 6, 7})
+            p1 = coords[newc[4]], p2 = coords[newc[5]], p3 = coords[newc[6]], p4 = coords[newc[7]];
+        auto n1 = crossProduct(Algvec(p1, p2), Algvec(p2, p3)); n1.Unit();
+        auto n2 = crossProduct(Algvec(p2, p3), Algvec(p3, p4)); n2.Unit();
+        auto n3 = crossProduct(Algvec(p3, p4), Algvec(p4, p1)); n3.Unit();
+        auto n4 = crossProduct(Algvec(p4, p1), Algvec(p1, p2)); n4.Unit();
+        n[i] = (n1+n2+n3+n4);
+    }
+    if (dotProduct(n[0], n[1])/(n[0].euLength()*n[1].euLength()) < -0.8)
+        UntangleType4_2(nfs, para, -1*n[0]);
+    else
+        UntangleType4_1(nfs, para);
+}
+
+void Modu::UntangleType4_1(set<set<uint8_t> > nfs, float para) {
+    set<uint8_t> bottomface, others, allp;
+    for (auto f : nfs)
+        for (auto x : f) {
+            if (allp.find(x) != allp.end())
+                others.insert(x);
+            else
+                allp.insert(x);
+        }
+    for (auto x : allp)
+        if (others.find(x) != others.end())
+            bottomface.insert(x);
+    vector<uint8_t> bot(bottomface.begin(), bottomface.end());
+    vector<uint8_t> b1{bot[0], bot[1], bot[2]}, b2{bot[0], bot[1], bot[3]};
+    Custom_push(b1, b2, others, para);
+}
+
+void Modu::UntangleType4_2(set<set<uint8_t> > nfs, float para, Algvec n) {
+    set<uint8_t> others;
+    set<uint8_t> bottomface = *nfs.begin();
+    for (auto x : *nfs.rbegin())
+        if (bottomface.find(x) == bottomface.end())
+            others.insert(x);
+    vector<uint8_t> bot(bottomface.begin(), bottomface.end());
+    vector<uint8_t> b1{bot[0], bot[1], bot[2]}, b2{bot[0], bot[1], bot[3]};
+    PushOutwards(b1, b2, others, n, para);
+}
+
+void Modu::UntangleType5(set<set<uint8_t> > nfs, float para) {
+    set<uint8_t> others;
+    vector<uint8_t> b;
+    map<uint8_t, uint8_t> valence;
+    for (auto f : nfs) {
+        for (auto x : f) {
+            if (valence.find(x) == valence.end())
+                valence.insert(make_pair(x, 0));
+            valence[x] += 1;
+        }
+    }
+    for (auto x : valence) {
+        if (x.second == 2)
+            b.push_back(x.first);
+        else
+            others.insert(x.first);
+    }
+    Custom_push(b, b, others, para);
+}
+
 void Modu::Custom_push(vector<uint8_t> b1, vector<uint8_t> b2, set<uint8_t> others, float para) {
     Algvec n1 = crossProduct(Algvec(coords[b1[0]], coords[b1[1]]), Algvec(coords[b1[1]], coords[b1[2]]));
     Algvec n2 = crossProduct(Algvec(coords[b2[0]], coords[b2[1]]), Algvec(coords[b2[1]], coords[b2[2]]));
@@ -496,6 +599,11 @@ void Modu::Custom_push(vector<uint8_t> b1, vector<uint8_t> b2, set<uint8_t> othe
     n2.Unit();
     auto n = n1 + n2;
     for (auto p : others) coords[p] = movepos(n, coords[b1[1]], coords[p], para);
+}
+
+void Modu::PushOutwards(vector<uint8_t> b1, vector<uint8_t> b2, set<uint8_t> others, Algvec n, float para) {
+    for (auto p : others)
+        coords[p] = {coords[p].x+n.dx*para, coords[p].y+n.dy*para, coords[p].z+n.dz*para};
 }
 
 Coord Modu::movepos(Algvec n, Coord b, Coord p, float para) {

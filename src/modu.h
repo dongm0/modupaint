@@ -46,7 +46,12 @@ private:
     void UntangleType1(set<set<uint8_t> >, float);
     void UntangleType2(set<set<uint8_t> >, float);
     void UntangleType3(set<set<uint8_t> >, float);
+    void UntangleType4(set<set<uint8_t> >, float);
+    void UntangleType4_1(set<set<uint8_t> >, float);
+    void UntangleType4_2(set<set<uint8_t> >, float, Algvec);
+    void UntangleType5(set<set<uint8_t> >, float);
     void Custom_push(vector<uint8_t>, vector<uint8_t>, set<uint8_t>, float);
+    void PushOutwards(vector<uint8_t>, vector<uint8_t>, set<uint8_t>, Algvec, float);
     Coord movepos(Algvec, Coord, Coord, float);
     /* bool AddVirtualType1(set<set<uint8_t> > nfs); */
     /* bool AddVirtualType2(); */

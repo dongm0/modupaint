@@ -7,6 +7,7 @@
 #include <map>
 #include <set>
 #include <string>
+#include <cstdlib>
 #include <cmath>
 #include <Mesquite_all_headers.hpp>
 using namespace std;
