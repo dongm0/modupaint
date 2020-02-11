@@ -7,6 +7,7 @@ src/TMP/
 src/*.vtk
 src/*.o
 src/paint
+src/modu2geom
 src/*.txt
 src/*.dat
 src/*.jpg
