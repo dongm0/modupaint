@@ -43,6 +43,8 @@ uint8_t QualityImprover::exec(Mesquite::MeshImpl &mymesh, Mesquite::MsqError &er
     streambuf* coutbuf = cout.rdbuf();
     ofstream of("tmp.dat");
     cout.rdbuf(of.rdbuf());
+    //Mesquite::PlanarDomain plane(Mesquite::PlanarDomain::Plane(0));
+    /* Mesquite::MeshDomainAssoc mesh_domain(&mymesh); */
     untangle.run_instructions(&mymesh, err);
 
     wrapper.run_instructions(&mymesh, err);

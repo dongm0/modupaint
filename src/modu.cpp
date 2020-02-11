@@ -61,7 +61,7 @@ void Modu::VtkOut() {
     fout << "POINT_DATA " << (int)chosenV.size() << endl;
     fout << "SCALARS fixed int\nLOOKUP_TABLE default\n";
     for (int i=0; i<chosenV.size(); ++i) {
-        if (i <= 2) fout << "1\n";
+        if (i <= 1) fout << "1\n";
         else fout << "0\n";
     }
     fout.close();
@@ -92,8 +92,8 @@ void Modu::VtkOut(set<uint8_t> fixed) {
     fout << "POINT_DATA " << (int)chosenV.size() << endl;
     fout << "SCALARS fixed int\nLOOKUP_TABLE default\n";
     for (int i=0; i<chosenV.size(); ++i) {
-        if (i <= 2) fout << "1\n";
-        else if (fixed.find(i) != fixed.end()) fout << "1\n";
+        //if (i <= 2) fout << "1\n";
+        if (fixed.find(i) != fixed.end()) fout << "1\n";
         else fout << "0\n";
     }
     fout.close();
@@ -610,7 +610,7 @@ Coord Modu::movepos(Algvec n, Coord b, Coord p, float para) {
     double l;
     double x0, y0, z0, x1, y1, z1, i, j, k;
     x0=b.x, y0=b.y, z0=b.z, x1=p.x, y1=p.y, z1=p.z, i=n.dx, j=n.dy, k=n.dz;
-    l = i*x0+j*y0+k*z0-i*x1-j*y1-j*z1;
+    l = i*x0+j*y0+k*z0-i*x1-j*y1-k*z1;
     l = l/(i*i+j*j+k*k);
     Coord res{x1+l*i*para, y1+l*j*para, z1+l*k*para};
     return res;

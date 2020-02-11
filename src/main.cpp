@@ -1,11 +1,12 @@
 #include "modu.h"
 #include "msq.h"
+#include "untangle.h"
 
 struct resStat {
     /* int moduid; */
     int cellnum;
     bool success;
-    int failat;//第？个单元失败
+    int failat;//第?个单元失败
     int failnewcelltype;
     int failcase;//0是优化过一遍没有用，1是untangle失败，2是celltype为1
 };
@@ -18,10 +19,12 @@ resStat work(string filename) {
     while (modu.cnum != modu.chosenC) {
         if (flag == 0)
             modu.SaveCache();
+        is_tangled(modu);
+        //modu.VtkOut();
         modu.AddNewcell();
         modu.VtkOut();
         QualityImprover q(modu.chosenC);
-        if(q.ExecWrapper() == 1) {
+        if (q.ExecWrapper() == 1) {
             if (flag == 1)
                 return resStat{modu.cnum, false, modu.chosenC, modu.newcelltype, 0};
             if (modu.newcelltype == 1)
@@ -52,7 +55,9 @@ int main(int argc, char** argv) {
     fout.open(to_string(maxcellnum) + "_modu_check_result.txt");
     string filename("../meshfile/modu/"+to_string(maxcellnum)+"_raw/");
     for (int i=1; i<maxmoduid; ++i) {
+        if (i!=319) continue;
         string f = filename + to_string(maxcellnum) + "_raw.txt_" + to_string(i);
+        //string f("../meshfile/modu/con17.txt");
         auto ans = work(f);
         fout << i << " " << ans.cellnum << " ";
         fout << ans.success << " " << ans.failat << " ";
@@ -64,8 +69,12 @@ int main(int argc, char** argv) {
             cmd1 = "cp ./vtk/" + celln + "_tmp_opt.vtk ./result/" + moduid + "_" + celln + ".vtk";
             system(cmd1.c_str());
         }
-        if (i%100 == 0)
-            cout << i << endl;
+        if (ans.success == false)
+            cout << "error: " << i << " " << ans.cellnum << endl;
+        if (ans.cellnum > 7)
+            break;
+        //if (i%100 == 0)
+            //cout << i << endl;
     }
     fout.close();
     return 0;
