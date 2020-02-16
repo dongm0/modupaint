@@ -12,6 +12,32 @@ void Mesh::ReadVtk(string filename) {
     msqmesh.get_all_vertices(vhs, err);
     for (uint8_t i=0; i<vhs.size(); ++i)
         vertices.insert(make_pair(i, vhs[i]));
+    ifstream fin;
+    fin.open(filename);
+    char buffer[256];
+    fin.getline(buffer, 256);
+    fin.getline(buffer, 256);
+    fin.getline(buffer, 256);
+    fin.getline(buffer, 256);
+    uint32_t vertexnum;
+    fin >> buffer >> vertexnum;
+    fin.getline(buffer, 256);
+    for (uint32_t i=0; i<vertexnum; ++i)
+        fin.getline(buffer, 256);
+    uint32_t cellnum;
+    fin >> buffer >> cellnum >> buffer;
+    cells.resize(cellnum);
+    fin.getline(buffer, 256);
+    for (uint32_t i=0; i<cellnum; ++i) {
+        cells[i].resize(8);
+        uint32_t tmp;
+        fin >> tmp;
+        for (uint32_t j=0; j<8; ++j) {
+            fin >> tmp;
+            cells[i][j] = tmp;
+        }
+    }
+    fin.close();
 }
 void Mesh::WriteVtk(string filename) {
     Mesquite::MsqError err;
@@ -25,8 +51,9 @@ void Mesh::BuildGeom() {
     for (uint8_t i=0; i<elenum; ++i) {
         InitCellpos(i);
         Optimize_local(i);
+        msqmesh.write_vtk("mid.vtk", err);
     }
-    Optimize_global();
+    //Optimize_global();
 }
 void Mesh::InitCellpos(uint8_t c) {
     Mesquite::MsqError err;
@@ -292,7 +319,7 @@ Mesquite::Vector3D Mesh::ProjecttoPlane(Mesquite::Vector3D s, Mesquite::Vector3D
     double x0, y0, z0, x1, y1, z1, i, j, k;
     x0=b.x(), y0=b.y(), z0=b.z();
     x1=s.x(), y1=s.y(), z1=s.z(), i=n.x(), j=n.y(), k=n.z();
-    auto l = i*x0+j*y0+k*z0-i*x1-j*y1-j*z1;
+    auto l = i*x0+j*y0+k*z0-i*x1-j*y1-k*z1;
     l = l/(i*i+j*j+k*k);
     Mesquite::Vector3D res(x1+l*i*para, y1+l*j*para, z1+l*k*para);
     return res;

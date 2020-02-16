@@ -1,7 +1,10 @@
 OPT = -g
 
-modu2geom: resource.h algvec.h mesh.h
-	g++ $(OPT) modu2geom.cpp mesh.cpp mesh.h algvec.h algvec.cpp resource.h -o modu2geom -lmesquite
+modu2geom: mesh.o resource.h mesh.h
+	g++ $(OPT) modu2geom.cpp mesh.o -o modu2geom -lmesquite
+
+mesh.o: resource.h algvec.h
+	g++ $(OPT) -c mesh.cpp
 
 paint: main.o algvec.o modu.o msq.o untangle.o 
 	g++ $(OPT) main.o algvec.o modu.o msq.o untangle.o -o paint -lmesquite
