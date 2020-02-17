@@ -1,6 +1,6 @@
 #include "modu.h"
 #include "msq.h"
-#include "untangle.h"
+//#include "untangle.h"
 
 struct resStat {
     /* int moduid; */
@@ -10,18 +10,40 @@ struct resStat {
     int failnewcelltype;
     int failcase;//0是优化过一遍没有用，1是untangle失败，2是celltype为1
 };
+resStat workq(string filename) {
+    Modu modu;
+    modu.ReadTopo(filename);
+    for (uint32_t i=0; i<modu.cnum; ++i) {
+        modu.AddNewcell(i);
+        modu.VtkOut(modu.newcellpoints);
+        /*
+         * 这里放优化函数
+         */
+        QualityImprover q(i);
+        bool v = q.ExecWrapper();
+        if (v) {
+            resStat res = {modu.cnum, false, (int32_t)i, modu.newcelltype, 1};
+            return res;
+        }
+        modu.VtkIn();
+    }
+    //可能进一步的优化
+    modu.VtkOut();
+    resStat res = {modu.cnum, true, modu.cnum, modu.newcelltype, 1};
+    return res;
+}
 
 resStat work(string filename) {
     Modu modu;
     modu.ReadTopo(filename);
-    modu.AddNewcell();
+    modu.AddNewcell(0);
     int flag = 0;
     while (modu.cnum != modu.chosenC) {
         if (flag == 0)
             modu.SaveCache();
-        is_tangled(modu);
+        //is_tangled(modu);
         //modu.VtkOut();
-        modu.AddNewcell();
+        modu.AddNewcell(modu.chosenC);
         modu.VtkOut();
         QualityImprover q(modu.chosenC);
         if (q.ExecWrapper() == 1) {

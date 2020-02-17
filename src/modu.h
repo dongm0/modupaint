@@ -5,6 +5,16 @@
 #include "algvec.h"
 #include "msq.h"
 
+class Polygon {
+public:
+    uint8_t polytype;
+    vector<uint8_t> bottomface;
+    map<uint8_t, vector<uint8_t> > otherpoints;
+
+    Polygon();
+    ~Polygon();
+};
+
 struct moducache {
     uint8_t cnum, vnum, chosenC;
     vector<uint8_t> topo;
@@ -21,13 +31,14 @@ public:
     set<uint8_t> chosenV;
     int newcelltype;
     set<uint8_t> newcellpoints;
+    set<set<uint8_t> > initedfaces;
 
     moducache cache;
 
     Modu();
     ~Modu();
     void ReadTopo(string filename);
-    void AddNewcell();
+    void AddNewcell(uint8_t);
     void VtkOut();
     void VtkOut(set<uint8_t>);
     void VtkIn();
@@ -35,6 +46,7 @@ public:
     void SaveCache();
     void LoadCache();
     bool TryUntangle(float);
+    void UntangleforNewCell(Polygon);
 
 private:
     map<uint8_t, uint8_t> vtkmapping;
@@ -58,6 +70,8 @@ private:
     /* bool AddVirtualType3(); */
 
     /* void FindPosv1(vector<uint8_t>&, vector<uint8_t>&, vector<uint8_t>&, set<set<uint8_t> >); */
+    Coord ProjecttoPlane(Coord, Coord, Algvec);
+    Coord FinePoint(uint8_t, Polygon);
 };
-
+vector<uint8_t> fullcell(vector<uint8_t> oc);
 #endif
