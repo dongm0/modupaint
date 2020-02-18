@@ -10,6 +10,7 @@ public:
     ~QualityImprover();
     uint8_t ExecWrapper();
     uint8_t isTangledWrapper();
+    uint8_t CustomWrapper();
 
 private:
     uint8_t exec(Mesquite::MeshImpl&, Mesquite::MsqError&);

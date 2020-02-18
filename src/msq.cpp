@@ -35,11 +35,52 @@ uint8_t QualityImprover::isTangledWrapper() {
 
     return isTangled(mymesh, err);
 }
+
+uint8_t QualityImprover::CustomWrapper() {
+    using namespace Mesquite;
+    string filename = "./vtk/" + to_string(cellnum);
+    filename += "_tmp.vtk";
+    MeshImpl mesh;
+    MsqError err;
+    mesh.read_vtk(filename.c_str(), err);
+    /* mesh.set_all_fixed_flags(0, err); */
+    vector<Mesh::VertexHandle> vhs;
+    vector<bool> fixedv;
+    mesh.set_all_fixed_flags(false, err);
+    UntangleBetaQualityMetric untangler;
+    LPtoPTemplate obj_func(&untangler, 2, err);
+    TrustRegion trust(&obj_func);
+    trust.use_element_on_vertex_patch();
+    InstructionQueue iqueue;
+    iqueue.set_master_quality_improver(&trust, err);
+    MeshDomainAssoc mesh_and_domain(&mesh, 0);
+    iqueue.run_instructions(&mesh_and_domain, err);
+    if (err) return 0;
+
+    IdealShapeTarget target;
+    TShapeSizeB1 mu_no;
+    TQualityMetric metric_no_0(&target, &mu_no);
+    ElementPMeanP metric_no(1.0, &metric_no_0);
+    PMeanPTemplate obj_func_no(1.0, &metric_no);
+    ConjugateGradient improver_no(&obj_func_no);;
+    improver_no.use_global_patch();
+    InstructionQueue queue;
+    queue.set_master_quality_improver(&improver_no, err);
+    queue.run_instructions(&mesh, err);
+    if (err) return 0;
+    string outfilename = "./vtk/" + to_string(cellnum);
+    outfilename += "_tmp_opt.vtk";
+    mesh.write_vtk(outfilename.c_str(), err);
+
+    return 2;
+
+}
 uint8_t QualityImprover::exec(Mesquite::MeshImpl &mymesh, Mesquite::MsqError &err) {
 
     Mesquite::ShapeImprovementWrapper wrapper1;
     Mesquite::ShapeImprover wrapper;
     Mesquite::UntangleWrapper untangle;
+    untangle.set_untangle_metric(Mesquite::UntangleWrapper::SIZE);
 
     streambuf* coutbuf = cout.rdbuf();
     ofstream of("tmp.dat");

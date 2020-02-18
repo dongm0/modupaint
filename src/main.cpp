@@ -20,7 +20,7 @@ resStat work1(string filename) {
          * 这里放优化函数
          */
         QualityImprover q(i+1);
-        uint8_t v = q.ExecWrapper();
+        uint8_t v = q.CustomWrapper();
         if (v != 2) {
             resStat res = {modu.cnum, false, (int32_t)i, modu.newcelltype, 1};
             return res;
@@ -77,26 +77,26 @@ int main(int argc, char** argv) {
     fout.open(to_string(maxcellnum) + "_modu_check_result.txt");
     string filename("../meshfile/modu/"+to_string(maxcellnum)+"_raw/");
     for (int i=1; i<maxmoduid; ++i) {
-        /* if (i!=76) continue; */
+        /* if (i!=1376) continue; */
         string f = filename + to_string(maxcellnum) + "_raw.txt_" + to_string(i);
         //string f("../meshfile/modu/con17.txt");
         auto ans = work1(f);
         fout << i << " " << ans.cellnum << " ";
         fout << ans.success << " " << ans.failat << " ";
         fout << ans.failnewcelltype << " " << ans.failcase << endl;
-        if (ans.success == true) {
-            string celln(to_string(ans.cellnum));
-            string moduid(to_string(i));//这里的moduid与modugenerate的topoid不是同一个东西
-            string cmd1;
-            cmd1 = "cp ./vtk/" + celln + "_tmp_opt.vtk ./result/" + moduid + "_" + celln + ".vtk";
-            system(cmd1.c_str());
-        }
+        //if (ans.success == true) {
+            //string celln(to_string(ans.cellnum));
+            //string moduid(to_string(i));//这里的moduid与modugenerate的topoid不是同一个东西
+            //string cmd1;
+            //cmd1 = "cp ./vtk/" + celln + "_tmp_opt.vtk ./result/" + moduid + "_" + celln + ".vtk";
+            //system(cmd1.c_str());
+        //}
         if (ans.success == false)
             cout << "error: " << i << " " << ans.cellnum << endl;
         if (ans.cellnum > 7)
             break;
-        //if (i%100 == 0)
-            //cout << i << endl;
+        if (i%100 == 0)
+            cout << i << endl;
     }
     fout.close();
     return 0;

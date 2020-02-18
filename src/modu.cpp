@@ -192,18 +192,21 @@ void Modu::AddNewcell(uint8_t c) {
         for (uint8_t i=0; i<4; ++i) {//新的点定位置
             if (poly.otherpoints.find(tf[i])!=poly.otherpoints.end() or poly.otherpoints.find(tf[(i+1)%4])!=poly.otherpoints.end()) continue;
             Coord c1s[3] = {coords[bf[(i+3)%4]], coords[bf[i]], coords[tf[(i+3)%4]]}, 
-                  c2s[3] = {coords[bf[(i+2)%4]], coords[bf[i+1]], coords[tf[(i+2)%4]]};
-            Algvec v1 = Algvec(c1s[0], c1s[1]) + Algvec(c1s[0], c1s[2]);
+                  c2s[3] = {coords[bf[(i+2)%4]], coords[bf[(i+1)%4]], coords[tf[(i+2)%4]]};
             Algvec n = crossProduct(Algvec(c1s[0], c1s[1]), Algvec(c1s[1], c2s[1]));
-            if (v1.euLength() < 1e-3) v1 = n;
-            if (dotProduct(v1, n) < 0) v1 = v1*(-1);
+            Algvec n1 = crossProduct(Algvec(c1s[2], c1s[0]), Algvec(c1s[0], c2s[0]));
+            n.Unit();
+            n1.Unit();
+            Algvec v1 = n + n1;
             v1.Unit();
+            v1 = v1*1.414;
+            if (dotProduct(v1, n) < 0) v1 = v1*(-1);
             coords[tf[i]] = v1.getToPoint(c1s[0]);
-            Algvec v2 = Algvec(c2s[0], c2s[1]) + Algvec(c2s[0], c2s[2]);
-            if (v2.euLength() < 1e-3) v2 = n;
-            if (dotProduct(v2, n) < 0) v2 = v2*(-1);
-            v2.Unit();
-            coords[tf[(i+1)%4]] = v2.getToPoint(c2s[0]);
+            /* Algvec v2 = Algvec(c2s[0], c2s[1]) + Algvec(c2s[0], c2s[2]); */
+            /* if (v2.euLength() < 1e-3) v2 = n; */
+            /* if (dotProduct(v2, n) < 0) v2 = v2*(-1); */
+            /* v2.Unit(); */
+            coords[tf[(i+1)%4]] = v1.getToPoint(c2s[0]);
         }
         UntangleforNewCell(poly);
     }
@@ -926,12 +929,12 @@ void Modu::UntangleforNewCell(Polygon poly) {
         if (dotProduct(Algvec(base, target2), Algvec(target1, target2)) < 0)
             coords[x.first] = target1;
         else
-            coords[x.first] = target1;
+            coords[x.first] = target2;
     }
 }
 
 Coord Modu::ProjecttoPlane(Coord s, Coord b, Algvec n) {
-    double para = 1;
+    double para = 1.1;
     double x0, y0, z0, x1, y1, z1, i, j, k;
     x0=b.x, y0=b.y, z0=b.z;
     x1=s.x, y1=s.y, z1=s.z, i=n.dx, j=n.dy, k=n.dz;
