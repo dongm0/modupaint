@@ -10,18 +10,18 @@ struct resStat {
     int failnewcelltype;
     int failcase;//0是优化过一遍没有用，1是untangle失败，2是celltype为1
 };
-resStat workq(string filename) {
+resStat work1(string filename) {
     Modu modu;
     modu.ReadTopo(filename);
     for (uint32_t i=0; i<modu.cnum; ++i) {
         modu.AddNewcell(i);
-        modu.VtkOut(modu.newcellpoints);
+        modu.VtkOut();
         /*
          * 这里放优化函数
          */
-        QualityImprover q(i);
-        bool v = q.ExecWrapper();
-        if (v) {
+        QualityImprover q(i+1);
+        uint8_t v = q.ExecWrapper();
+        if (v != 2) {
             resStat res = {modu.cnum, false, (int32_t)i, modu.newcelltype, 1};
             return res;
         }
@@ -77,10 +77,10 @@ int main(int argc, char** argv) {
     fout.open(to_string(maxcellnum) + "_modu_check_result.txt");
     string filename("../meshfile/modu/"+to_string(maxcellnum)+"_raw/");
     for (int i=1; i<maxmoduid; ++i) {
-        if (i!=319) continue;
+        /* if (i!=76) continue; */
         string f = filename + to_string(maxcellnum) + "_raw.txt_" + to_string(i);
         //string f("../meshfile/modu/con17.txt");
-        auto ans = work(f);
+        auto ans = work1(f);
         fout << i << " " << ans.cellnum << " ";
         fout << ans.success << " " << ans.failat << " ";
         fout << ans.failnewcelltype << " " << ans.failcase << endl;

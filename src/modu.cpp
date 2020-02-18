@@ -212,7 +212,7 @@ void Modu::AddNewcell(uint8_t c) {
         Polygon poly;
         for (auto x : faces) ftmp.insert(x);
         vector<uint8_t> pfaces = {0, 5, 1, 3, 2, 4};
-        poly.polytype = 4;
+        poly.polytype = 3;
         uint8_t bfnum = faces[0];
         poly.bottomface = vector<uint8_t>{fc[bfnum*4], fc[bfnum*4+3], fc[bfnum*4+2], fc[bfnum*4+1]};
         for (uint8_t i=0; i<3; ++i) {
@@ -220,7 +220,7 @@ void Modu::AddNewcell(uint8_t c) {
             if (ftmp.find(f1)==ftmp.end() or ftmp.find(f2)==ftmp.end()) continue;
             for (auto x : ftmp)
                 if (x!=f1 and x!= f2) bfnum = x;
-            poly.polytype = 3;
+            poly.polytype = 4;
             poly.bottomface = vector<uint8_t>{fc[bfnum*4], fc[bfnum*4+3], fc[bfnum*4+2], fc[bfnum*4+1]};
         }
         map<uint8_t, uint8_t> pos;//底面每个点在底面中的位置
@@ -919,7 +919,7 @@ void Modu::UntangleforNewCell(Polygon poly) {
     n.Unit();
     for (auto x : poly.otherpoints) {
         Coord p = coords[x.first];
-        if (dotProduct(n, Algvec(p, bfc[0])) > 0) continue;
+        if (dotProduct(n, Algvec(p, bfc[0])) < 0) continue;
         Coord target1 = ProjecttoPlane(p, bfc[0], n);
         Coord target2 = FinePoint(x.first, poly);
         Coord base = coords[x.second[0]];

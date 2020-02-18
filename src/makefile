@@ -1,4 +1,4 @@
-OPT = -g
+OPT = -O2
 
 modu2geom: mesh.o resource.h mesh.h
 	g++ $(OPT) modu2geom.cpp mesh.o -o modu2geom -lmesquite

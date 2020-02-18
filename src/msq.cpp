@@ -37,7 +37,8 @@ uint8_t QualityImprover::isTangledWrapper() {
 }
 uint8_t QualityImprover::exec(Mesquite::MeshImpl &mymesh, Mesquite::MsqError &err) {
 
-    Mesquite::ShapeImprovementWrapper wrapper;
+    Mesquite::ShapeImprovementWrapper wrapper1;
+    Mesquite::ShapeImprover wrapper;
     Mesquite::UntangleWrapper untangle;
 
     streambuf* coutbuf = cout.rdbuf();
@@ -48,6 +49,7 @@ uint8_t QualityImprover::exec(Mesquite::MeshImpl &mymesh, Mesquite::MsqError &er
     untangle.run_instructions(&mymesh, err);
 
     wrapper.run_instructions(&mymesh, err);
+    wrapper1.run_instructions(&mymesh, err);
     cout.rdbuf(coutbuf);
 
     return 1;
