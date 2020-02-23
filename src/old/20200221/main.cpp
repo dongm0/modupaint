@@ -1,5 +1,6 @@
 #include "modu.h"
 #include "msq.h"
+//#include "untangle.h"
 
 struct resStat {
     /* int moduid; */
@@ -30,6 +31,44 @@ resStat work1(string filename) {
     modu.VtkOut();
     resStat res = {modu.cnum, true, modu.cnum, modu.newcelltype, 1};
     return res;
+}
+
+resStat work(string filename) {
+    Modu modu;
+    modu.ReadTopo(filename);
+    modu.AddNewcell(0);
+    int flag = 0;
+    while (modu.cnum != modu.chosenC) {
+        if (flag == 0)
+            modu.SaveCache();
+        //is_tangled(modu);
+        //modu.VtkOut();
+        modu.AddNewcell(modu.chosenC);
+        modu.VtkOut();
+        QualityImprover q(modu.chosenC);
+        if (q.ExecWrapper() == 1) {
+            if (flag == 1)
+                return resStat{modu.cnum, false, modu.chosenC, modu.newcelltype, 0};
+            if (modu.newcelltype == 1)
+                return resStat{modu.cnum, false, modu.chosenC, modu.newcelltype, 2};
+            modu.LoadCache();
+            for (int i=0; i<5; ++i) {
+                modu.LoadCache();
+                modu.TryUntangle(1.0/(i+1));
+                modu.VtkOut(modu.newcellpoints);//固定
+                QualityImprover q1(modu.chosenC);
+                if (q1.ExecWrapper() == 2)
+                    break;
+                if (i == 4)
+                    return resStat{modu.cnum, false, modu.chosenC, modu.newcelltype, 1};
+            }
+            flag = 1;
+        }
+        else
+            flag = 0;
+        modu.VtkIn();
+    }
+    return resStat{modu.cnum, true, -1, -1, -1};
 }
 
 int main() {
