@@ -50,7 +50,10 @@ uint8_t QualityImprover::CustomWrapper() {
     UntangleBetaQualityMetric untangler;
     LPtoPTemplate obj_func(&untangler, 2, err);
     TrustRegion trust(&obj_func);
-    trust.use_element_on_vertex_patch();
+    trust.use_global_patch();
+    TerminationCriterion e;
+    e.add_relative_gradient_L2_norm(2e-2);
+    trust.set_inner_termination_criterion(&e);
     InstructionQueue iqueue;
     iqueue.set_master_quality_improver(&trust, err);
     MeshDomainAssoc mesh_and_domain(&mesh, 0);
@@ -58,7 +61,7 @@ uint8_t QualityImprover::CustomWrapper() {
     if (err) return 0;
 
     IdealShapeTarget target;
-    TShapeSizeB1 mu_no;
+    TShapeSizeB3 mu_no;
     TQualityMetric metric_no_0(&target, &mu_no);
     ElementPMeanP metric_no(1.0, &metric_no_0);
     PMeanPTemplate obj_func_no(1.0, &metric_no);

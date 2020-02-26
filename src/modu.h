@@ -46,6 +46,9 @@ public:
     void UntangleforNewCell(Polygon);
 
 private:
+    void UntanglePlaneBottom(Polygon);
+    void UntangleLineBottom(Polygon);
+    void UntanglePointBottom(Polygon);
     map<uint8_t, uint8_t> vtkmapping;
 
     Coord ProjecttoPlane(Coord, Coord, Algvec);

@@ -419,6 +419,19 @@ vector<uint8_t> fullcell(vector<uint8_t> oc) {
 }
 
 void Modu::UntangleforNewCell(Polygon poly) {
+    if (poly.polytype == 2)
+        UntangleLineBottom(poly);
+    else if (poly.polytype == 3)
+        UntanglePlaneBottom(poly);
+    else if (poly.polytype == 4) 
+        UntanglePlaneBottom(poly);
+    else if (poly.polytype == 5)
+        UntangleLineBottom(poly);
+    else if (poly.polytype == 6) 
+        UntanglePlaneBottom(poly);
+}
+
+void Modu::UntanglePlaneBottom(Polygon poly) {
     Mesquite::MsqError err;
     Algvec n1, n2, n;
     Coord bfc[4] = {coords[poly.bottomface[0]], coords[poly.bottomface[1]], 
@@ -440,6 +453,133 @@ void Modu::UntangleforNewCell(Polygon poly) {
         //else
             //coords[x.first] = target2;
         coords[x.first] = target3;
+    }
+}
+
+void Modu::UntangleLineBottom(Polygon poly) {
+    struct LineBottom {
+        /*        corner
+         *  
+         * p10------p1------p11
+         *          |
+         *          |
+         *          |
+         *          |
+         *          |
+         * p00------p0------p01
+         *        
+         *        corner
+         */
+        uint8_t p0, p1;
+        uint8_t p00, p01, p10, p11;
+        map<uint8_t, uint8_t> corner;
+        Algvec n;
+    };
+    LineBottom lb;
+    auto bf = poly.bottomface;
+    auto type = poly.polytype;
+    map<uint8_t, uint8_t> num;
+    num.insert(make_pair(2, 2));
+    num.insert(make_pair(4, 3));
+    vector<uint8_t> line;
+    for (auto x : poly.otherpoints) {
+        if (x.second.size() == num[type])
+            line.push_back(x.second[0]);
+    }
+    for (uint8_t i=0; i<4; ++i) {
+        if (bf[i]==line[0] and bf[(i+3)%4]==line[1]) {
+            auto tmp = line[1];
+            line[1] = line[0];
+            line[0] = tmp;
+        }
+    }
+    lb.p0 = line[0];
+    lb.p1 = line[1];
+    for (uint8_t i=0; i<4; ++i) {
+        if (bf[i] == line[0])
+            lb.p00 = bf[(i+3)%4];
+        if (bf[i] == line[1])
+            lb.p10 = bf[(i+1)%4];
+    }
+    for (auto x : poly.otherpoints) {
+        if (x.second[0] == lb.p0)
+            lb.p01 = x.first;
+        if (x.second[0] == lb.p1)
+            lb.p11 = x.first;
+        if (x.second[0] == lb.p00)
+            lb.corner.insert(make_pair(lb.p0, x.first));
+        if (x.second[0] == lb.p10)
+            lb.corner.insert(make_pair(lb.p1, x.first));
+    }
+    Algvec v0(coords[lb.p00], coords[lb.p0]), v1(coords[lb.p0], coords[lb.p1]), 
+           v2(coords[lb.p1], coords[lb.p10]), v3(coords[lb.p11], coords[lb.p1]),
+           v4(coords[lb.p1], coords[lb.p0]), v5(coords[lb.p0], coords[lb.p01]);
+    Algvec n1 = crossProduct(v0, v1) + crossProduct(v1, v2); 
+    Algvec n2 = crossProduct(v3, v4) + crossProduct(v4, v5);
+    lb.n = n1 + n2;
+    if (dotProduct(crossProduct(n1, n2), v1) < 0)
+        lb.n = lb.n*(-1);
+    lb.n.Unit();
+    
+    //下面是点移动
+    if (dotProduct(Algvec(coords[lb.p0], coords[lb.p00]), lb.n) < 0)
+        coords[lb.p00] = ProjecttoPlane(coords[lb.p00], coords[lb.p0], lb.n);
+    if (dotProduct(Algvec(coords[lb.p0], coords[lb.p01]), lb.n) < 0)
+        coords[lb.p01] = ProjecttoPlane(coords[lb.p01], coords[lb.p0], lb.n);
+    if (dotProduct(Algvec(coords[lb.p1], coords[lb.p10]), lb.n) < 0)
+        coords[lb.p10] = ProjecttoPlane(coords[lb.p10], coords[lb.p1], lb.n);
+    if (dotProduct(Algvec(coords[lb.p1], coords[lb.p11]), lb.n) < 0)
+        coords[lb.p11] = ProjecttoPlane(coords[lb.p11], coords[lb.p1], lb.n);
+    if (lb.corner.size() == 2) {
+        Algvec l(coords[lb.p0], coords[lb.p1]);
+        l.Unit();
+        l = l*1.414;
+        Algvec nn = lb.n*0.2;
+        Coord np1 = l.getToPoint(coords[lb.p1]);
+        np1 = nn.getToPoint(np1);
+        l = l*(-1);
+        Coord np0 = l.getToPoint(coords[lb.p0]);
+        np0 = nn.getToPoint(np0);
+        coords[lb.p0] = np0;
+        coords[lb.p1] = np1;
+    }
+}
+
+void Modu::UntanglePointBottom(Polygon poly) {
+    struct PointBottom {
+        uint8_t cent;
+        vector<uint8_t> base3p;
+        vector<uint8_t> other3p;
+        Algvec n;
+    };
+    PointBottom pb;
+    pb.base3p.resize(3);
+    for (auto x : poly.otherpoints) {
+        if (x.second.size() == 3) {
+            pb.cent = x.second[0];
+            pb.base3p[0] = x.first;
+            break;
+        }
+        else if (x.second.size() == 2)
+            pb.other3p.push_back(x.first);
+    }
+    for (uint8_t i=0; i<4; ++i) {
+        if (poly.bottomface[i] == pb.cent) {
+            pb.base3p[1] = poly.bottomface[(i+3)%4];
+            pb.base3p[2] = poly.bottomface[(i+1)%4];
+            pb.other3p.push_back(poly.bottomface[(i+2)%4]);
+        }
+    }
+    Algvec n[3];
+    for (uint8_t i=0; i<3; ++i)
+        n[i] = crossProduct(Algvec(coords[pb.cent], coords[pb.base3p[(i+1)%3]]), 
+                            Algvec(coords[pb.cent], coords[pb.base3p[i]]));
+    pb.n = n[0] + n[1] + n[2];
+
+    //点位移
+    for (uint8_t i=0; i<3; ++i) {
+        coords[pb.other3p[i]] = ProjecttoPlane(coords[pb.other3p[i]], coords[pb.cent], pb.n);
+        coords[pb.base3p[i]] = ProjecttoPlane(coords[pb.base3p[i]], coords[pb.cent], pb.n);
     }
 }
 
